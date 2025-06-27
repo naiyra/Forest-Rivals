@@ -12,9 +12,9 @@ public class CollectibleUIManager : MonoBehaviour
     void Update()
     {
         if (player1 != null)
-            player1Text.text = "P1: " + player1.collectibleCount;
+            player1Text.text = ": " + player1.collectibleCount;
 
         if (player2 != null)
-            player2Text.text = "P2: " + player2.collectibleCount;
+            player2Text.text = ": " + player2.collectibleCount;
     }
 }
