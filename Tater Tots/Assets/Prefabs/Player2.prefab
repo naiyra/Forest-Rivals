@@ -614,11 +614,20 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2665956657871953948}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8b1b7d16629acad4b946969bdd7a2e2d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  startSource: {fileID: 0}
+  idleSource: {fileID: 0}
+  forwardSource: {fileID: 0}
+  reverseSource: {fileID: 0}
+  engineStartClip: {fileID: 0}
+  idleLoopClip: {fileID: 0}
+  runningLoopClip: {fileID: 0}
+  reverseLoopClip: {fileID: 0}
+  forwardLoopClip: {fileID: 0}
   control: 1
   maxAcceleration: 30
   brakeAcceleration: 100
@@ -638,6 +647,7 @@ MonoBehaviour:
   - wheelModel: {fileID: 6697625976707250931}
     wheelCollider: {fileID: 3889415925006835020}
     axel: 0
+  collectibleCount: 0
 --- !u!65 &9192142506068265792
 BoxCollider:
   m_ObjectHideFlags: 0

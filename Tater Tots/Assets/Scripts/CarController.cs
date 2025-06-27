@@ -4,11 +4,29 @@ using System.Collections.Generic;
 
 public class CarController : MonoBehaviour
 {
-    public enum PlayerControl
+
+    private bool isStunned = false;
+    private float stunDuration = 1.0f;
+    private float stunTimer = 0f;
+
+
+
+    private Vector3 lastValidPosition;
+    private Quaternion lastValidRotation;
+    private float groundedCheckDelay = 0.2f;
+    private float groundedCheckTimer;
+
+
+
+
+
+
+    public enum ControlMode
     {
         Player1,
-        Player2
-    }
+        Player2,
+        Buttons
+    };
 
     public enum Axel
     {
@@ -21,30 +39,25 @@ public class CarController : MonoBehaviour
     {
         public GameObject wheelModel;
         public WheelCollider wheelCollider;
-        public GameObject wheelEffectObj;
-        public ParticleSystem smokeParticle;
         public Axel axel;
     }
 
-    [Header("Control Settings")]
-    public PlayerControl control = PlayerControl.Player1;
+    public ControlMode control;
 
-    [Header("Car Settings")]
-    public float maxAcceleration = 20f;
-    public float brakeAcceleration = 5000f;
+    public float maxAcceleration = 30.0f;
+    public float brakeAcceleration = 50.0f;
+
     public float turnSensitivity = 1.0f;
-    public float maxSteerAngle = 25.0f;
-    public float speedMultiplier = 1f; // Normal speed multiplier
-    public Vector3 _centerOfMass;
-    public List<Wheel> wheels;
+    public float maxSteerAngle = 30.0f;
 
-    [Header("Turbo Settings")]
-    public float turboMultiplier = 2f; // Boost multiplier
-    public bool isTurboActive = false;
+    public Vector3 _centerOfMass;
+
+    public List<Wheel> wheels;
 
     float moveInput;
     float steerInput;
     bool isBraking;
+    private bool isAirborne;  // Flag for checking if the car is airborne
 
     private Rigidbody carRb;
 
@@ -53,102 +66,177 @@ public class CarController : MonoBehaviour
         carRb = GetComponent<Rigidbody>();
         carRb.centerOfMass = _centerOfMass;
 
-        carRb.drag = 0.3f;
-        carRb.angularDrag = 2.0f;
-        carRb.mass = 1200f;
 
-        foreach (var wheel in wheels)
-        {
-            WheelFrictionCurve sideways = wheel.wheelCollider.sidewaysFriction;
-            sideways.extremumSlip = 0.2f;
-            sideways.extremumValue = 1f;
-            sideways.asymptoteSlip = 0.5f;
-            sideways.asymptoteValue = 0.75f;
-            sideways.stiffness = 3.0f;
-            wheel.wheelCollider.sidewaysFriction = sideways;
-        }
     }
 
     void Update()
     {
+        TrackLastValidPosition();
+        CheckResetInput();
+
+        if (isStunned)
+        {
+            stunTimer -= Time.deltaTime;
+            if (stunTimer <= 0f)
+            {
+                isStunned = false;
+            }
+            return; // Skip inputs while stunned
+        }
+
         GetInputs();
         AnimateWheels();
-        // WheelEffects(); // 🔇 Still disabled
+
+
+
+    }
+
+
+
+
+
+
+
+    void TrackLastValidPosition()
+    {
+        groundedCheckTimer -= Time.deltaTime;
+
+        if (groundedCheckTimer <= 0f)
+        {
+            if (IsGrounded())
+            {
+                lastValidPosition = transform.position;
+                lastValidRotation = transform.rotation;
+            }
+
+            groundedCheckTimer = groundedCheckDelay;
+        }
+    }
+
+    bool IsGrounded()
+    {
+        foreach (var wheel in wheels)
+        {
+            if (wheel.wheelCollider.isGrounded)
+                return true;
+        }
+        return false;
+    }
+
+    void CheckResetInput()
+    {
+        bool resetRequested = false;
+
+        if (control == ControlMode.Player1 && Input.GetKeyDown(KeyCode.R))
+            resetRequested = true;
+        else if (control == ControlMode.Player2 && Input.GetKeyDown(KeyCode.Return))
+            resetRequested = true;
+
+        if (resetRequested)
+        {
+            ResetCarToLastPosition();
+        }
+    }
+
+    void ResetCarToLastPosition()
+    {
+        carRb.velocity = Vector3.zero;
+        carRb.angularVelocity = Vector3.zero;
+        transform.position = lastValidPosition + Vector3.up * 1f; // raise slightly to avoid clipping
+        transform.rotation = lastValidRotation;
     }
 
     void LateUpdate()
     {
-        HandleMovement(); // Merged driving + braking + turbo logic
+        // Check if the car is airborne (not grounded)
+        isAirborne = !IsGrounded();
+
+        Move();
         Steer();
+        Brake();
+    }
+
+    public void MoveInput(float input)
+    {
+        moveInput = input;
+    }
+
+    public void SteerInput(float input)
+    {
+        steerInput = input;
     }
 
     void GetInputs()
     {
-        if (control == PlayerControl.Player1)
+        switch (control)
         {
-            moveInput = (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0);
-            steerInput = (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0);
-            isBraking = Input.GetKey(KeyCode.Q);
-            isTurboActive = Input.GetKey(KeyCode.LeftShift); // 🚀 Player 1 Turbo
-        }
-        else if (control == PlayerControl.Player2)
-        {
-            moveInput = (Input.GetKey(KeyCode.UpArrow) ? 1 : 0) - (Input.GetKey(KeyCode.DownArrow) ? 1 : 0);
-            steerInput = (Input.GetKey(KeyCode.RightArrow) ? 1 : 0) - (Input.GetKey(KeyCode.LeftArrow) ? 1 : 0);
-            isBraking = Input.GetKey(KeyCode.Space);
-            isTurboActive = Input.GetKey(KeyCode.RightControl); // 🚀 Player 2 Turbo
+            case ControlMode.Player1:
+                moveInput = Input.GetKey(KeyCode.W) ? 1f : Input.GetKey(KeyCode.S) ? -1f : 0f;
+                steerInput = Input.GetKey(KeyCode.D) ? 1f : Input.GetKey(KeyCode.A) ? -1f : 0f;
+                isBraking = Input.GetKey(KeyCode.Q);
+                break;
+
+            case ControlMode.Player2:
+                moveInput = Input.GetKey(KeyCode.UpArrow) ? 1f : Input.GetKey(KeyCode.DownArrow) ? -1f : 0f;
+                steerInput = Input.GetKey(KeyCode.RightArrow) ? 1f : Input.GetKey(KeyCode.LeftArrow) ? -1f : 0f;
+                isBraking = Input.GetKey(KeyCode.Space);
+                break;
+
+            case ControlMode.Buttons:
+                // In Buttons mode, inputs should be set externally via MoveInput() and SteerInput()
+                // We'll assume brake is handled by a separate button that sets isBraking
+                break;
         }
     }
 
-    void HandleMovement()
+    void Move()
     {
-        float forwardVelocity = Vector3.Dot(transform.forward, carRb.velocity);
-
-        // Apply turbo multiplier if active
-        float turboBoost = isTurboActive ? turboMultiplier : 1f;
-        float appliedTorque = moveInput * maxAcceleration * speedMultiplier * turboBoost * 150f;
+        if (isStunned)
+        {
+            foreach (var wheel in wheels)
+            {
+                wheel.wheelCollider.motorTorque = 0f;
+            }
+            return;
+        }
 
         foreach (var wheel in wheels)
         {
-            // Reset previous brake
-            wheel.wheelCollider.brakeTorque = 0f;
-
-            // Full brake
-            if (isBraking)
-            {
-                wheel.wheelCollider.motorTorque = 0f;
-                wheel.wheelCollider.brakeTorque = brakeAcceleration;
-            }
-            // Engine braking when no input
-            else if (moveInput == 0 && Mathf.Abs(forwardVelocity) > 0.5f)
-            {
-                wheel.wheelCollider.motorTorque = 0f;
-                wheel.wheelCollider.brakeTorque = brakeAcceleration * 0.5f;
-            }
-            // Normal drive or turbo drive
-            else
-            {
-                wheel.wheelCollider.motorTorque = appliedTorque;
-                wheel.wheelCollider.brakeTorque = 0f;
-            }
+            wheel.wheelCollider.motorTorque = moveInput * maxAcceleration;
         }
     }
 
     void Steer()
     {
-        float speed = carRb.velocity.magnitude;
-        float speedFactor = Mathf.Clamp01(speed / 50f);
-        float steerLimit = Mathf.Lerp(maxSteerAngle, maxSteerAngle * 0.25f, speedFactor);
-        float _steerAngle = steerInput * turnSensitivity * steerLimit;
+        // Reduce steering when airborne
+        float speedFactor = Mathf.Clamp01(carRb.velocity.magnitude / 20f);
+        float adjustedSteer = steerInput * turnSensitivity * Mathf.Lerp(maxSteerAngle, maxSteerAngle * 0.5f, speedFactor);
+
+        // If airborne, reduce the steering intensity
+        if (isAirborne)
+        {
+            adjustedSteer *= 0.5f;  // Airborne steering sensitivity
+        }
 
         foreach (var wheel in wheels)
         {
             if (wheel.axel == Axel.Front)
             {
-                wheel.wheelCollider.steerAngle = Mathf.Lerp(wheel.wheelCollider.steerAngle, _steerAngle, 0.6f);
+                wheel.wheelCollider.steerAngle = Mathf.Lerp(wheel.wheelCollider.steerAngle, adjustedSteer, 0.1f);
             }
         }
     }
+
+    void Brake()
+    {
+        float brakeForce = isBraking || moveInput == 0 || isStunned ? brakeAcceleration : 0;
+
+        foreach (var wheel in wheels)
+        {
+            wheel.wheelCollider.brakeTorque = brakeForce;
+        }
+    }
+
 
     void AnimateWheels()
     {
@@ -161,19 +249,34 @@ public class CarController : MonoBehaviour
             wheel.wheelModel.transform.rotation = rot;
         }
     }
-
-    /*
-    // 🔇 Commented out for now
-    void WheelEffects()
+    public void ApplyTNTStun()
     {
-        foreach (var wheel in wheels)
-        {
-            if (isBraking && wheel.axel == Axel.Rear && wheel.wheelCollider.isGrounded && carRb.velocity.magnitude >= 10.0f)
-            {
-                wheel.wheelEffectObj.GetComponentInChildren<TrailRenderer>().emitting = true;
-                wheel.smokeParticle.Emit(1);
-            }
-        }
+        isStunned = true;
+        stunTimer = stunDuration;
+
+        carRb.velocity *= 0.3f;
+
+        LoseCollectibles(); // 👈 Lose some on hit
+
+        Debug.Log($"{gameObject.name} is stunned by TNT and slowed down!");
     }
-    */
+
+    public int collectibleCount = 0;
+
+    public void AddCollectible(int amount = 1)
+    {
+        collectibleCount += amount;
+        Debug.Log($"{gameObject.name} collected! Total = {collectibleCount}");
+    }
+
+    public void LoseCollectibles(int amount = 3)
+    {
+        collectibleCount -= amount;
+        if (collectibleCount < 0) collectibleCount = 0;
+        Debug.Log($"{gameObject.name} lost {amount} collectibles! Remaining = {collectibleCount}");
+    }
+
+
+
+
 }
