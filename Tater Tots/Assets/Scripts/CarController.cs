@@ -60,6 +60,11 @@ public class CarController : MonoBehaviour
     private bool isAirborne;  // Flag for checking if the car is airborne
 
     private Rigidbody carRb;
+    private float boostTimer = 0f;
+    private float speedBoostMultiplier = 1f;
+    public int lastPassedWaypointIndex = -1; // Will be set by TrackPositionManager
+
+    public Transform[] trackWaypoints; // Assign these from TrackPositionManager when the race starts
 
     void Start()
     {
@@ -84,16 +89,13 @@ public class CarController : MonoBehaviour
             return; // Skip inputs while stunned
         }
 
+
         GetInputs();
         AnimateWheels();
 
 
 
     }
-
-
-
-
 
 
 
@@ -128,23 +130,34 @@ public class CarController : MonoBehaviour
         bool resetRequested = false;
 
         if (control == ControlMode.Player1 && Input.GetKeyDown(KeyCode.R))
-            resetRequested = true;
-        else if (control == ControlMode.Player2 && Input.GetKeyDown(KeyCode.Return))
-            resetRequested = true;
+            ResetCarToLastWaypoint();
+        else if (control == ControlMode.Player2 && Input.GetKeyDown(KeyCode.L))  // ← NEW button for Player2
+            ResetCarToLastWaypoint();
+
 
         if (resetRequested)
         {
-            ResetCarToLastPosition();
+            ResetCarToLastWaypoint();
         }
     }
 
-    void ResetCarToLastPosition()
+    void ResetCarToLastWaypoint()
     {
+        if (trackWaypoints == null || lastPassedWaypointIndex < 0 || lastPassedWaypointIndex >= trackWaypoints.Length)
+        {
+            Debug.LogWarning("Waypoint data invalid. Using fallback position.");
+            transform.position = lastValidPosition + Vector3.up * 1f;
+            transform.rotation = lastValidRotation;
+            return;
+        }
+
+        Transform wp = trackWaypoints[lastPassedWaypointIndex];
         carRb.velocity = Vector3.zero;
         carRb.angularVelocity = Vector3.zero;
-        transform.position = lastValidPosition + Vector3.up * 1f; // raise slightly to avoid clipping
-        transform.rotation = lastValidRotation;
+        transform.position = wp.position + Vector3.up * 1f;
+        transform.rotation = Quaternion.LookRotation(trackWaypoints[(lastPassedWaypointIndex + 1) % trackWaypoints.Length].position - wp.position);
     }
+
 
     void LateUpdate()
     {
@@ -202,7 +215,8 @@ public class CarController : MonoBehaviour
 
         foreach (var wheel in wheels)
         {
-            wheel.wheelCollider.motorTorque = moveInput * maxAcceleration;
+            wheel.wheelCollider.motorTorque = moveInput * maxAcceleration * speedBoostMultiplier;
+
         }
     }
 
@@ -276,6 +290,12 @@ public class CarController : MonoBehaviour
         Debug.Log($"{gameObject.name} lost {amount} collectibles! Remaining = {collectibleCount}");
     }
 
+    public void ApplySpeedBoost(float boostMultiplier = 2f, float duration = 2f)
+    {
+        speedBoostMultiplier = boostMultiplier;
+        boostTimer = duration;
+        Debug.Log($"{gameObject.name} received a speed boost!");
+    }
 
 
 

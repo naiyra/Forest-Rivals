@@ -1350,8 +1350,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1441681982516656962}
-  - component: {fileID: 2924013747700877969}
   - component: {fileID: 8438580592897986524}
+  - component: {fileID: 2924013747700877969}
   - component: {fileID: 8202536958190180878}
   - component: {fileID: 7878619510213549595}
   m_Layer: 0
@@ -1385,33 +1385,6 @@ Transform:
   - {fileID: 2125050913712800773}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!54 &2924013747700877969
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5409289314060116914}
-  serializedVersion: 4
-  m_Mass: 200
-  m_Drag: 0
-  m_AngularDrag: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 2
 --- !u!114 &8438580592897986524
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1443,7 +1416,36 @@ MonoBehaviour:
   - wheelModel: {fileID: 8065612081637960047}
     wheelCollider: {fileID: 2452453363055931614}
     axel: 0
+  lastPassedWaypointIndex: -1
+  trackWaypoints: []
   collectibleCount: 0
+--- !u!54 &2924013747700877969
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5409289314060116914}
+  serializedVersion: 4
+  m_Mass: 200
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 2
 --- !u!65 &8202536958190180878
 BoxCollider:
   m_ObjectHideFlags: 0

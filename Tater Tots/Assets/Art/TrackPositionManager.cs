@@ -138,6 +138,8 @@ public class TrackPositionManager : MonoBehaviour
         }
 
         player.lastPassedWaypoint = closestIndex;
+        player.racer.GetComponent<CarController>().lastPassedWaypointIndex = closestIndex;
+
     }
 
     void UpdatePositions()

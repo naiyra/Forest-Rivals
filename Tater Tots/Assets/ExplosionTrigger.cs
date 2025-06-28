@@ -2,22 +2,32 @@ using UnityEngine;
 
 public class ExplosionTrigger : MonoBehaviour
 {
-    public GameObject explosionPrefab; // Assign your VFX prefab in the Inspector
+    public GameObject explosionPrefab;             // VFX prefab
+    public AudioSource explosionAudioSourcePrefab; // Prefab with AudioSource + Explosion SFX
 
     private void OnTriggerEnter(Collider other)
-
     {
-
+        if (!other.CompareTag("Player")) return;
 
         CarController player = other.GetComponent<CarController>();
+        if (player == null) return;
 
-
-        if (other.CompareTag("Player"))
-        {
+        // Play VFX
+        if (explosionPrefab != null)
             Instantiate(explosionPrefab, transform.position, Quaternion.identity);
-            player.ApplyTNTStun();
-            Destroy(gameObject);
-        }
-    }
 
+        // Play SFX via temporary clone
+        if (explosionAudioSourcePrefab != null)
+        {
+            AudioSource audioClone = Instantiate(explosionAudioSourcePrefab, transform.position, Quaternion.identity);
+            audioClone.Play();
+            Destroy(audioClone.gameObject, audioClone.clip.length);
+        }
+
+        // Stun effect
+        player.ApplyTNTStun();
+
+        // Destroy TNT immediately
+        Destroy(gameObject);
+    }
 }
