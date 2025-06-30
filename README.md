@@ -10,5 +10,6 @@ Game Development MsC.
 ![image](https://github.com/user-attachments/assets/acb66e5f-de35-4558-b71f-420ed55b1321)
 ![image](https://github.com/user-attachments/assets/229b594b-a0ac-42b2-8ca0-e7518df4f776)
 
+[GDD (2).pdf](https://github.com/user-attachments/files/20987175/GDD.2.pdf)
 
 
