@@ -1,9 +1,25 @@
 using UnityEngine;
+using System.Collections;
 
 public class ExplosionTrigger : MonoBehaviour
 {
     public GameObject explosionPrefab;             // VFX prefab
     public AudioSource explosionAudioSourcePrefab; // Prefab with AudioSource + Explosion SFX
+    [SerializeField] private float respawnDelay = 10f;
+
+    private Collider col;
+    private MeshRenderer meshRenderer;
+
+    private void Start()
+    {
+        col = GetComponent<Collider>();
+        meshRenderer = GetComponent<MeshRenderer>();
+
+        if (col == null)
+            Debug.LogError("Missing Collider on TNT box!");
+        if (meshRenderer == null)
+            Debug.LogWarning("Missing MeshRenderer on TNT box!");
+    }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -24,10 +40,23 @@ public class ExplosionTrigger : MonoBehaviour
             Destroy(audioClone.gameObject, audioClone.clip.length);
         }
 
-        // Stun effect
+        // Apply TNT effect
         player.ApplyTNTStun();
 
-        // Destroy TNT immediately
-        Destroy(gameObject);
+        // Hide and start respawn
+        StartCoroutine(HandleRespawn());
+    }
+
+    private IEnumerator HandleRespawn()
+    {
+        col.enabled = false;
+        if (meshRenderer != null)
+            meshRenderer.enabled = false;
+
+        yield return new WaitForSeconds(respawnDelay);
+
+        if (meshRenderer != null)
+            meshRenderer.enabled = true;
+        col.enabled = true;
     }
 }

@@ -120,6 +120,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   collectibleVFX: {fileID: 9157105887711914197, guid: c4f829cb7dd4b864caf8832ec5b1ee55,
     type: 3}
+  respawnDelay: 5
 --- !u!65 &8228074889877523752
 BoxCollider:
   m_ObjectHideFlags: 0
